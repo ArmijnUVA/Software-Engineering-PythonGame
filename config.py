@@ -175,61 +175,80 @@ SPAWN_POSITIONS = [
 # SPRITE CONFIGURATION
 # =============================================================================
 
-# Pas dit aan naar jouw sprite sheet specificaties
+# Sprite sheets: 1536x128 px, 12 frames van 128x128 naast elkaar.
+# Plaats je PNG-bestanden in: assets/sprites/default/
+#
+#   Upward Jump.png  → idle (frame 0) + spring-animatie
+#   Running.png  → loopanimatie links/rechts
+#   Roll.png     → dash-animatie
+#   Falling.png  → knockback-animatie (alleen zware aanvallen)
 SPRITE_CONFIG = {
     "default": {
         "idle": {
-            "frames": 4,
-            "frame_width": 64,
-            "frame_height": 64,
-            "animation_speed": 8,  # frames per sprite frame
+            "file": "Upward Jump.png",
+            "frames": 1,           # Alleen frame 0 = staande pose
+            "frame_width": 128,
+            "frame_height": 128,
+            "animation_speed": 1,
         },
         "run": {
-            "frames": 6,
-            "frame_width": 64,
-            "frame_height": 64,
-            "animation_speed": 5,
+            "file": "Running.png",
+            "frames": 12,
+            "frame_width": 128,
+            "frame_height": 128,
+            "animation_speed": 3,
         },
         "jump": {
-            "frames": 2,
-            "frame_width": 64,
-            "frame_height": 64,
-            "animation_speed": 6,
+            "file": "Upward Jump.png",
+            "frames": 12,
+            "frame_width": 128,
+            "frame_height": 128,
+            "animation_speed": 3,
         },
         "fall": {
+            "file": "Upward Jump.png",
+            "frames": 12,
+            "frame_width": 128,
+            "frame_height": 128,
+            "animation_speed": 4,
+        },
+        "dash": {
+            "file": "Roll.png",
+            "frames": 12,
+            "frame_width": 128,
+            "frame_height": 128,
+            "animation_speed": 2,
+        },
+        "knockback": {
+            "file": "Falling.png",
+            "frames": 12,
+            "frame_width": 128,
+            "frame_height": 128,
+            "animation_speed": 3,
+        },
+        # Placeholders voor aanvalsanimaties (nog geen sprites)
+        "hurt": {
             "frames": 2,
-            "frame_width": 64,
-            "frame_height": 64,
-            "animation_speed": 6,
+            "frame_width": 128,
+            "frame_height": 128,
+            "animation_speed": 8,
         },
         "punch1": {
             "frames": 6,
-            "frame_width": 64,
-            "frame_height": 64,
-            "animation_speed": 3,
-        },
-        "punch2": {
-            "frames": 6,
-            "frame_width": 64,
-            "frame_height": 64,
+            "frame_width": 128,
+            "frame_height": 128,
             "animation_speed": 3,
         },
         "kick": {
             "frames": 6,
-            "frame_width": 64,
-            "frame_height": 64,
-            "animation_speed": 3,
-        },
-        "jump_kick": {
-            "frames": 6,
-            "frame_width": 64,
-            "frame_height": 64,
+            "frame_width": 128,
+            "frame_height": 128,
             "animation_speed": 3,
         },
         "special": {
             "frames": 6,
-            "frame_width": 64,
-            "frame_height": 64,
+            "frame_width": 128,
+            "frame_height": 128,
             "animation_speed": 3,
         },
     }

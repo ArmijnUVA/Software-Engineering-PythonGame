@@ -2,6 +2,9 @@
 #
 # Als er geen sprite-bestanden gevonden worden, worden placeholder-
 # rechthoeken gebruikt (zodat het spel altijd werkt).
+#
+# Sprite sheets verwacht in: assets/sprites/default/
+# Karakterspecifieke sprites: assets/sprites/{character_name}/
 
 import pygame
 import os
@@ -27,13 +30,20 @@ class AnimationSystem:
         config = SPRITE_CONFIG.get(character_name, SPRITE_CONFIG.get("default", {}))
 
         for anim_name, anim_config in config.items():
-            file_path = os.path.join(
-                self.sprites_path,
-                character_name,
-                anim_config.get("file", f"{anim_name}.png")
-            )
+            filename = anim_config.get("file", f"{anim_name}.png")
 
-            if os.path.exists(file_path):
+            # Zoek eerst in karaktermap, dan in default-map
+            char_path = os.path.join(self.sprites_path, character_name, filename)
+            default_path = os.path.join(self.sprites_path, "default", filename)
+
+            if os.path.exists(char_path):
+                file_path = char_path
+            elif os.path.exists(default_path):
+                file_path = default_path
+            else:
+                file_path = None
+
+            if file_path:
                 frames = self._load_sprite_sheet(
                     file_path,
                     anim_config["frames"],
@@ -113,3 +123,7 @@ class AnimationSystem:
     def reset_animation(self, player_id):
         # Reset de animatietimer voor een speler.
         self.animation_timers[player_id] = 0
+
+
+# Gedeeld singleton-object — alle characters delen dezelfde sprite cache
+animation_system = AnimationSystem()

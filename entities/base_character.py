@@ -65,6 +65,7 @@ class BaseCharacter:
         self.state = "idle"
         self.animation_frame = 0
         self.animation_timer = 0
+        self.heavy_knockback = False   # Zware knockback → Falling-animatie
 
         # Actieve aanval
         self.active_attack = None
@@ -302,6 +303,8 @@ class BaseCharacter:
             return None
 
         self.attack_frame = 0
+        self.animation_frame = 0
+        self.animation_timer = 0
         return self.active_attack
 
     def _update_attack(self):
@@ -336,6 +339,9 @@ class BaseCharacter:
             return
 
         self.damage_percent += damage
+
+        # Zware aanvallen (knockback_base >= 6) activeren de Falling-animatie
+        self.heavy_knockback = knockback_base >= 6
 
         # Knockback-formule: hoe meer schade, hoe verder weggeslagen
         knockback = knockback_base + (self.damage_percent * knockback_scaling)
@@ -376,22 +382,35 @@ class BaseCharacter:
 
     def _update_animation_state(self):
         # Bepaal welke animatie afgespeeld wordt op basis van wat de character doet.
-        if self.active_attack:
-            return  # Aanvalsanimatie heeft prioriteit
+        from config import SPRITE_CONFIG
 
-        if self.hitstun > 0:
-            self.state = "hurt"
-        elif self.is_dashing:
-            self.state = "dash"
-        elif not self.on_ground:
-            if self.vel_y < 0:
-                self.state = "jump"
+        old_state = self.state
+
+        if not self.active_attack:
+            if self.hitstun > 0:
+                self.state = "knockback" if self.heavy_knockback else "hurt"
+            elif self.is_dashing:
+                self.state = "dash"
+            elif not self.on_ground:
+                self.state = "jump" if self.vel_y < 0 else "fall"
+            elif abs(self.vel_x) > 0.5:
+                self.state = "run"
             else:
-                self.state = "fall"
-        elif abs(self.vel_x) > 0.5:
-            self.state = "run"
-        else:
-            self.state = "idle"
+                self.state = "idle"
+                self.heavy_knockback = False  # Reset na landing in idle
+
+        # Reset animatietimer bij staatsverandering
+        if self.state != old_state:
+            self.animation_frame = 0
+            self.animation_timer = 0
+
+        # Bereken huidig frame op basis van animatiesnelheid uit config
+        anim_config = SPRITE_CONFIG.get("default", {}).get(self.state, {})
+        speed = anim_config.get("animation_speed", 5)
+        num_frames = anim_config.get("frames", 1)
+
+        self.animation_timer += 1
+        self.animation_frame = (self.animation_timer // speed) % num_frames
 
     # -------------------------------------------------------------------------
     # TEKENEN
@@ -402,19 +421,36 @@ class BaseCharacter:
         return pygame.Rect(self.x, self.y, self.width, self.height)
 
     def draw(self, screen, camera_offset=(0, 0)):
-        # Teken de character op het scherm.
+        # Teken de character op het scherm met sprite of fallback-rechthoek.
+        from systems.animation import animation_system
+
         draw_x = self.x - camera_offset[0]
         draw_y = self.y - camera_offset[1]
 
-        # Flash wit tijdens onkwetsbaarheidsframes
-        color = self.color
-        if self.invincible > 0 and self.invincible % 10 < 5:
-            color = Colors.WHITE
+        frame = animation_system.get_frame(
+            self.get_character_name(), self.state, self.animation_frame, self.facing_right
+        )
 
-        if not self.sprites_loaded:
+        if frame is not None:
+            # Sprites zijn 128x128; teken gecentreerd op de hitbox, voeten onderaan
+            display_size = 128
+            scaled = pygame.transform.scale(frame, (display_size, display_size))
+            sprite_x = int(draw_x + self.width // 2 - display_size // 2)
+            sprite_y = int(draw_y + self.height - display_size)
+
+            # Knipperen tijdens onkwetsbaarheidsframes
+            if self.invincible > 0 and self.invincible % 10 < 5:
+                scaled.set_alpha(80)
+            else:
+                scaled.set_alpha(255)
+
+            screen.blit(scaled, (sprite_x, sprite_y))
+        else:
+            # Fallback: gekleurde rechthoek als er geen sprite beschikbaar is
+            color = self.color
+            if self.invincible > 0 and self.invincible % 10 < 5:
+                color = Colors.WHITE
             pygame.draw.rect(screen, color, (draw_x, draw_y, self.width, self.height))
-
-            # Kleine witte blok toont welke kant de character op kijkt
             indicator_x = draw_x + (self.width - 10) if self.facing_right else draw_x
             pygame.draw.rect(screen, Colors.WHITE, (indicator_x, draw_y + 10, 10, 10))
 
